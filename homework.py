@@ -1,23 +1,34 @@
-import math 
+import math
+import copy
 class Boardinfo:
     def __init__(self, gameBoard):
-        self.whitePiece = 12
-        self.blackPiece = 12
+        self.whitePiece = 9
+        self.blackPiece = 4
         self.whiteKingPiece = 0
         self.blackKingPiece = 0
         self.gameBoard = gameBoard
+    
+    def score(self):
+        return self.whitePiece - self.blackPiece + (self.whiteKingPiece * 0.5 - self.blackKingPiece * 0.5)
+    
+    def allPieces(self, color):
+        pieces = []
+        for i in range(0,8):
+            for j in range(0, 8):
+                if self.gameBoard[i][j].lower() == color:
+                    pieces.append([i, j])
+        return pieces
 
-    def move_piece(self, piece, oldrow, oldcol, newrow, newcol, gameBoard):
-        gameBoard[oldrow][oldcol], gameBoard[newrow][newcol] =  gameBoard[newrow][newcol], gameBoard[oldrow][oldcol]
+    def move_piece(self, piece, oldrow, oldcol, newrow, newcol):
+        self.gameBoard[oldrow][oldcol], self.gameBoard[newrow][newcol] =  self.gameBoard[newrow][newcol], self.gameBoard[oldrow][oldcol]
         if newrow == 0 or newrow == 7:
             if piece == "b":
-                gameBoard[newrow][newcol] = "B"
+                self.gameBoard[newrow][newcol] = "B"
                 self.blackKingPiece += 1
-            else:
-                gameBoard[newrow][newcol] = "W"
+            elif piece == "w":
+                self.gameBoard[newrow][newcol] = "W"
                 self.whiteKingPiece += 1
         
-    
     def getValidMoves(self, color, isKing, oldrow, oldcol):
         leftDiagonal = oldcol - 1
         rightDiagonal = oldcol + 1
@@ -25,30 +36,30 @@ class Boardinfo:
         if color == "b" or isKing:
             validMoves += (self.leftSide(oldrow + 1, min(oldrow + 3, 8), 1, color, leftDiagonal))
             validMoves += (self.rightSide(oldrow + 1, min(oldrow + 3, 8), 1, color, rightDiagonal))
-            print("valid moves")
-            print(validMoves)
+            # print("valid moves")
+            # print(validMoves)
         if color == "w" or isKing:
             validMoves += (self.leftSide(oldrow - 1, max(oldrow - 3, -1), -1, color, leftDiagonal))
             validMoves += (self.rightSide(oldrow - 1, max(oldrow - 3, -1), -1, color, rightDiagonal))
-            print("valid moves")
-            print(validMoves)
+            # print("valid moves")
+            # print(validMoves)
         return validMoves
 
     def leftSide(self, startrow, endrow, direction, color, left, jumpNode=[]):
         # print("in rightSide")
-        print("left jumpNode: ", jumpNode)
+        # print("left jumpNode: ", jumpNode)
         validMoves = []
         previous = []
         
         if startrow > 7  or startrow < 0:
             return validMoves
         for i in range(startrow, endrow, direction):
-            print("prev", previous)
+            # print("prev", previous)
             if left < 0:
                 break
-            print("[i][left]: ", i, left)
+            # print("[i][left]: ", i, left)
             if self.gameBoard[i][left].lower() == color:
-                print("same color")
+                # print("same color")
                 break
             
             #current is a empty square
@@ -74,17 +85,17 @@ class Boardinfo:
                     else:
                         next_endrow = min(i + 3, 8)
                     validMoves += (self.leftSide(i + direction, next_endrow, direction, color, left - 1, jumpNode))
-                    print("validMoves: ", validMoves)
-                    print("jumpNode: ", jumpNode)
+                    # print("validMoves: ", validMoves)
+                    # print("jumpNode: ", jumpNode)
                     validMoves += (self.rightSide(i + direction, next_endrow, direction, color, left + 1, jumpNode))
-                    print("validMoves: ", validMoves)
-                    print("jumpNode: ", jumpNode)
+                    # print("validMoves: ", validMoves)
+                    # print("jumpNode: ", jumpNode)
                     if len(validMoves) == validMovesLength:
                         finalPosition = [i, left]
                         new_jumpNode = jumpNode.copy()
                         finalPosition.append(new_jumpNode)
                         validMoves.append(finalPosition)
-                        print("validMoves.append(finalPosition): ",validMoves)
+                        # print("validMoves.append(finalPosition): ",validMoves)
                     jumpNode.pop(-1)
                 break
             #it is another color, and it is possible to jumpNode
@@ -94,20 +105,20 @@ class Boardinfo:
         return validMoves
 
     def rightSide(self, startrow, endrow, direction, color, right, jumpNode=[]):
-        print("in rightSide")
-        print("right jumpNode: ", jumpNode)
+        # print("in rightSide")
+        # print("right jumpNode: ", jumpNode)
         validMoves = []
         previous = []
         
         if startrow > 7  or startrow < 0:
             return validMoves
         for i in range(startrow, endrow, direction):
-            print("prev", previous)
+            # print("prev", previous)
             if right > 7:
                 break
-            print("[i][right]: ", i, right)
+            # print("[i][right]: ", i, right)
             if self.gameBoard[i][right].lower() == color:
-                print("same color")
+                # print("same color")
                 break
             
             #current is a empty square
@@ -123,7 +134,7 @@ class Boardinfo:
                     finalPosition = [i, right]
                     finalPosition.append(jumpNode)
                     validMoves.append(finalPosition)
-                print("in right validMoves: ", validMoves)
+                # print("in right validMoves: ", validMoves)
                 #it is possible to jumpNode
                 if previous:
                     jumpNode.append(previous)
@@ -139,7 +150,7 @@ class Boardinfo:
                         new_jumpNode = jumpNode.copy()
                         finalPosition.append(new_jumpNode)
                         validMoves.append(finalPosition)
-                        print("validMoves.append(finalPosition): ",validMoves)
+                        # print("validMoves.append(finalPosition): ",validMoves)
                     jumpNode.pop(-1)
                 break
             #it is another color, and it is possible to jumpNode
@@ -151,10 +162,28 @@ class Boardinfo:
     def remove(self, removePieces):
         newlist = removePieces[2:][0]
 
-        print(newlist)
+        # print(newlist)
         for piece in newlist:
-            print(piece)
-            gameBoard[piece[0]][piece[1]] = '.'
+            # print(piece)
+            if self.gameBoard[piece[0]][piece[1]] == 'W':
+                self.whiteKingPiece -= 1
+                self.whitePiece -= 1
+            elif self.gameBoard[piece[0]][piece[1]] == 'w':
+                self.whitePiece -= 1
+            elif self.gameBoard[piece[0]][piece[1]] == 'B':
+                self.blackKingPiece -= 1
+                self.blackPiece -= 1
+            elif self.gameBoard[piece[0]][piece[1]] == 'b':
+                self.blackPiece -= 1
+            self.gameBoard[piece[0]][piece[1]] = '.'
+
+    def win(self):
+        if self.blackPiece <= 0:
+            return 'w'
+        elif self.whitePiece <= 0:
+            return 'b'
+        else:
+            return False
 
 class during_game:
     def __init__(self, gameBoard, color):
@@ -183,8 +212,8 @@ class during_game:
 
         if self.selected:
             self.validMoves = self.board.getValidMoves(self.color, self.isKing, oldrow, oldcol)
-            print("self.validMoves")
-            print(self.validMoves)
+            # print("self.validMoves")
+            # print(self.validMoves)
             newrow, newcol = input("where do you want the piece move to?").split()
             newrow, newcol = int(newrow), int(newcol)
             result = self.move(oldrow, oldcol, newrow, newcol)
@@ -194,15 +223,15 @@ class during_game:
                 self.selectedPiece()
 
     def move(self, oldrow, oldcol, newrow, newcol):
-        canbemovedb = False
+        canbemoved = False
         for i in self.validMoves:
             if i[0] == newrow and i[1] == newcol:
                 removepieces = i
-                print("i: ",i)
+                # print("i: ",i)
                 canbemoved = True
                 break
         if self.board.gameBoard[newrow][newcol] == '.' and canbemoved:
-            self.board.move_piece(self.selected, oldrow, oldcol, newrow, newcol, gameBoard)
+            self.board.move_piece(self.selected, oldrow, oldcol, newrow, newcol)
             jump = removepieces
             if jump:
                 self.board.remove(jump)
@@ -211,42 +240,61 @@ class during_game:
             return False
         return True
 
+    def getCurrentBoard(self):
+        return self.board
+
+    def afterAIMove(self, gameBoard):
+        self.board = gameBoard
+        output(self.board.gameBoard)
+
+def allMoves(curBoard, color, game):
+    moves = []
+    for piece in curBoard.allPieces(color):
+        if curBoard.gameBoard[piece[0]][piece[1]].isupper():
+            isKing = True
+        else:
+            isKing = False
+        validMoves = curBoard.getValidMoves(color, isKing, piece[0], piece[1])
+        for validMove in validMoves:
+            destination = validMove[:2]
+            tempBoard = copy.deepcopy(curBoard)
+            newBoard = afterTempMove(color, piece, destination,tempBoard, game, validMove)
+            moves.append(newBoard)
+    # print("moves")
+    # print(moves)
+    return moves
+
+def afterTempMove(color, piece, destination, tempBoard, game, jump):
+    tempBoard.move_piece(color, piece[0], piece[1], destination[0], destination[1])
+    if jump:
+        tempBoard.remove(jump)
+    return tempBoard
 
 
-class Piece:
-    def __init__(self, row, col, color):
-        self.row = row
-        self.col = col
-        self.color = color
-        self.isking = False
-
-    def become_king(self):
-        self.isking = True
+def maxvalue(curBoard, curDepth, game, myColor, oppositColor):
     
-    def after_move(self, row, col):
-        self.row = row
-        self.col = col
-    
+    if curDepth == 0 or curBoard.win() != False:
+        return curBoard.score(), curBoard
+    nextMove = None
+    maxScore = -100000
+    for move in allMoves(curBoard, myColor, game):
+        score = minvalue(move, curDepth - 1, game, myColor, oppositColor)[0]
+        maxScore = max(maxScore, score)
+        if maxScore == score:
+            nextMove = move
+    return maxScore, nextMove
 
-
-  
-def maxvalue(curDepth, nodeIndex, scores, targetDepth):
-    if (curDepth == targetDepth):  
-        return scores[nodeIndex]
-    v = -100000
-    curDepth += 1
-    for i in range(nodeIndex * 2, nodeIndex * 2 + 2):
-        v = max(v, minvalue(curDepth, i, scores, targetDepth))
-    return v
-
-def minvalue(curDepth, nodeIndex, scores, targetDepth):
-    if (curDepth == targetDepth):  
-        return scores[nodeIndex]
-    v = 100000
-    curDepth += 1
-    for i in range(nodeIndex * 2, nodeIndex * 2 + 2):
-        v = min(v, maxvalue(curDepth, i, scores, targetDepth))
-    return v
+def minvalue(curBoard, curDepth, game, myColor, oppositColor):
+    if curDepth == 0 or curBoard.win() != False:
+        return curBoard.score(), curBoard
+    nextMove = None
+    minScore = 100000
+    for move in allMoves(curBoard, oppositColor, game):
+        score = maxvalue(move, curDepth - 1, game, myColor, oppositColor)[0]
+        minScore = min(minScore, score)
+        if minScore == score:
+            nextMove = move
+    return minScore, nextMove
 
 def output(gameBoard):
     line = 0
@@ -286,6 +334,11 @@ if myColor == "BLACK":
     myColor = 'b'
 else:
     myColor = 'w'
+
 game = during_game(gameBoard, myColor)
-# board.move_piece(piece, 0, 1, 7, 0, gameBoard)
-game.selectedPiece()
+if myColor == 'b':
+    maxScore, nextMove = maxvalue(game.getCurrentBoard(), 3, game, 'b', 'w')
+    game.afterAIMove(nextMove)
+else:
+    maxScore, nextMove = maxvalue(game.getCurrentBoard(), 3, game, 'w', 'b')
+    game.afterAIMove(nextMove)
