@@ -1,24 +1,39 @@
 import math
 import copy
+import time
 class Boardinfo:
-    def __init__(self, gameBoard):
-        self.whitePiece = 9
-        self.blackPiece = 10
-        self.whiteKingPiece = 0
-        self.blackKingPiece = 0
+    def __init__(self, gameBoard, blackPiece, whitePiece, blackKingPiece, whiteKingPiece):
+        self.whitePiece = whitePiece
+        self.blackPiece = blackPiece
+        self.whiteKingPiece = whiteKingPiece
+        self.blackKingPiece = blackKingPiece
         self.gameBoard = gameBoard
+
     
     def score(self, color):
-        print("self.blackPiece: ")
-        print(self.blackPiece)
-        print("self.whitePiece: ")
-        print(self.whitePiece)
+        blackPiesesScore = 0
+        whitePiesesScore = 0
+        blackKingscore = 0
+        whitekKingscore = 0
+        totalPieces = self.whitePiece + self.blackPiece
+        for i in range(0,8):
+            for j in range(0, 8):
+                if self.gameBoard[i][j] == 'b':
+                    blackPiesesScore += 5 + i
+                elif self.gameBoard[i][j] == 'B':
+                    blackKingscore += 7 + 8
+                elif self.gameBoard[i][j] == 'w':
+                    whitePiesesScore += 5 + (7 - i)
+                elif self.gameBoard[i][j] == 'W':
+                    whitekKingscore += 7 + 8
+
+        blackTotalScore = (blackKingscore / totalPieces)+ blackPiesesScore
+        whiteTotalScore = (whitekKingscore / totalPieces) + whitePiesesScore
+
         if color == 'b':
-            score = self.blackPiece - self.whitePiece + (self.blackKingPiece * 0.5 - self.whiteKingPiece * 0.5)
+            score = blackTotalScore - whiteTotalScore
         if color == 'w':
-            score = self.whitePiece - self.blackPiece + (self.whiteKingPiece * 0.5 - self.blackKingPiece * 0.5)
-        print("score: ")
-        print(score)
+            score = whiteTotalScore - blackTotalScore
         return score
     
     def allPieces(self, color):
@@ -27,62 +42,73 @@ class Boardinfo:
             for j in range(0, 8):
                 if self.gameBoard[i][j].lower() == color:
                     pieces.append([i, j])
+        if color == 'w':
+            pieces.reverse()
         return pieces
 
     def move_piece(self, piece, oldrow, oldcol, newrow, newcol):
         self.gameBoard[oldrow][oldcol], self.gameBoard[newrow][newcol] =  self.gameBoard[newrow][newcol], self.gameBoard[oldrow][oldcol]
-        if piece == "b" and newrow == 7:
+        if piece == "b" and newrow == 7 and self.gameBoard[newrow][newcol] != "B":
             self.gameBoard[newrow][newcol] = "B"
             self.blackKingPiece += 1
-        elif piece == "w" and newrow == 0:
+        elif piece == "w" and newrow == 0 and self.gameBoard[newrow][newcol] != "W":
             self.gameBoard[newrow][newcol] = "W"
             self.whiteKingPiece += 1
         
     def getValidMoves(self, color, isKing, oldrow, oldcol):
         leftDiagonal = oldcol - 1
         rightDiagonal = oldcol + 1
+        validJumpMoves = []
+        TempvalidMoves = []
         validMoves = []
+        
         if color == "b" or isKing:
-            validMoves += (self.leftSide(oldrow + 1, min(oldrow + 3, 8), 1, color, leftDiagonal))
-            validMoves += (self.rightSide(oldrow + 1, min(oldrow + 3, 8), 1, color, rightDiagonal))
+            TempvalidMoves += (self.leftSide(oldrow, oldcol, oldrow + 1, min(oldrow + 3, 8), 1, color, leftDiagonal, isKing))
+            TempvalidMoves += (self.rightSide(oldrow, oldcol, oldrow + 1, min(oldrow + 3, 8), 1, color, rightDiagonal, isKing))
 
         if color == "w" or isKing:
-            validMoves += (self.leftSide(oldrow - 1, max(oldrow - 3, -1), -1, color, leftDiagonal))
-            validMoves += (self.rightSide(oldrow - 1, max(oldrow - 3, -1), -1, color, rightDiagonal))
+            TempvalidMoves += (self.leftSide(oldrow, oldcol, oldrow - 1, max(oldrow - 3, -1), -1, color, leftDiagonal, isKing))
+            TempvalidMoves += (self.rightSide(oldrow, oldcol, oldrow - 1, max(oldrow - 3, -1), -1, color, rightDiagonal, isKing))
+        for i in TempvalidMoves:
+            i.insert(0, [oldrow, oldcol])
+            if len(i) > 3:
+                validJumpMoves.append(i)
+            else:
+                validMoves.append(i)
+        # print(validJumpMoves)
+        return validMoves, validJumpMoves
+        
 
-        # print("valid moves")
-        # print(validMoves)
-        return validMoves
-
-    def leftSide(self, startrow, endrow, direction, color, left, jumpNode=[], nextPositionList=[]):
-        # print("in rightSide")
-        # print("left jumpNode: ", jumpNode)
+    def leftSide(self, oldrow, oldcol, startrow, endrow, direction, color, left, isKing, jumpNode=[], nextPositionList=[]):
         validMoves = []
         previous = []
-        
+        backToOriginal = False
         if startrow > 7  or startrow < 0:
             return validMoves
         for i in range(startrow, endrow, direction):
-            # print("prev", previous)
             if left < 0:
                 break
-            # print("[i][left]: ", i, left)
             if self.gameBoard[i][left].lower() == color:
-                # print("same color")
-                break
-            
+                if i == oldrow and left == oldcol:
+                    backToOriginal = True
+                else:
+                    backToOriginal = False
+            if self.gameBoard[i][left].lower() == color and not backToOriginal:
+                    break
+            elif [i, left] in jumpNode:
+                return validMoves
             #current is a empty square
-            elif self.gameBoard[i][left] == '.': 
+            elif self.gameBoard[i][left] == '.' or backToOriginal: 
                 #after one jumpNode, left is . 
                 if jumpNode and not previous:
                     break
                 #after one jumpNode, left is another color
                 elif jumpNode:
                     pass
-                    # validMoves[(i, left)] = previous + jumpNode
                 #didnot jumpNode at all
                 elif not previous and not jumpNode:
-                    finalPosition = [i, left]
+                    finalPosition = []
+                    finalPosition.append([i, left])
                     finalPosition.append(jumpNode)
                     validMoves.append(finalPosition)
 
@@ -91,8 +117,6 @@ class Boardinfo:
                     nextPosition = []
                     nextPosition.append(previous[0] + direction)
                     nextPosition.append(previous[1] - 1)
-                    # print("nextPosition:")
-                    # print(nextPosition)
                     nextPositionList.append(nextPosition)
                     jumpNode.append(previous)
                     validMovesLength = len(validMoves)
@@ -100,20 +124,24 @@ class Boardinfo:
                         next_endrow = max(i - 3, -1)
                     else:
                         next_endrow = min(i + 3, 8)
-                    validMoves += (self.leftSide(i + direction, next_endrow, direction, color, left - 1, jumpNode, nextPositionList))
-                    # print("validMoves: ", validMoves)
-                    # print("jumpNode: ", jumpNode)
-                    validMoves += (self.rightSide(i + direction, next_endrow, direction, color, left + 1, jumpNode, nextPositionList))
-                    # print("validMoves: ", validMoves)
-                    # print("jumpNode: ", jumpNode)
+                    validMoves += (self.leftSide(oldrow, oldcol, i + direction, next_endrow, direction, color, left - 1, isKing, jumpNode, nextPositionList))
+                    validMoves += (self.rightSide(oldrow, oldcol, i + direction, next_endrow, direction, color, left + 1, isKing, jumpNode, nextPositionList))
+                    if isKing:
+                        if direction == -1:
+                            next_endrow = min(i + 3, 8)
+                        else:
+                            next_endrow = max(i - 3, -1)
+                        validMoves += (self.leftSide(oldrow, oldcol, i + (-direction), next_endrow, -direction, color, left - 1, isKing, jumpNode, nextPositionList))
+
                     if len(validMoves) == validMovesLength:
-                        finalPosition = [i, left]
+                        finalPosition = []
+                        finalPosition.append([i, left])
                         new_jumpNode = jumpNode.copy()
                         new_nextPositionList = nextPositionList.copy()
                         finalPosition.append(new_jumpNode)
-                        finalPosition += new_nextPositionList
+                        finalPosition.append(new_nextPositionList)
                         validMoves.append(finalPosition)
-                        # print("validMoves.append(finalPosition): ",validMoves)
+
                     jumpNode.pop(-1)
                     nextPositionList.pop(-1)
                 break
@@ -123,44 +151,42 @@ class Boardinfo:
             left -= 1
         return validMoves
 
-    def rightSide(self, startrow, endrow, direction, color, right, jumpNode=[], nextPositionList=[]):
-        # print("in rightSide")
-        # print("right jumpNode: ", jumpNode)
+    def rightSide(self, oldrow, oldcol, startrow, endrow, direction, color, right, isKing, jumpNode=[], nextPositionList=[]):
+        backToOriginal = False
         validMoves = []
         previous = []
-        
         if startrow > 7  or startrow < 0:
             return validMoves
         for i in range(startrow, endrow, direction):
-            # print("prev", previous)
             if right > 7:
                 break
-            # print("[i][right]: ", i, right)
             if self.gameBoard[i][right].lower() == color:
-                # print("same color")
+                if i == oldrow and right == oldcol:
+                    backToOriginal = True
+                else:
+                    backToOriginal = False
+            if self.gameBoard[i][right].lower() == color and not backToOriginal:
                 break
-            
+            elif [i, right] in jumpNode:
+                return validMoves
             #current is a empty square
-            elif self.gameBoard[i][right] == '.': 
+            elif self.gameBoard[i][right] == '.' or backToOriginal: 
                 #after one jumpNode, right is . 
                 if jumpNode and not previous:
                     break
                 #after one jumpNode, right is another color
                 elif jumpNode:
-                    # validMoves[(i, right)] = previous + jumpNode
                     pass
                 elif not previous and not jumpNode:
-                    finalPosition = [i, right]
+                    finalPosition = []
+                    finalPosition.append([i, right])
                     finalPosition.append(jumpNode)
                     validMoves.append(finalPosition)
-                # print("in right validMoves: ", validMoves)
                 #it is possible to jumpNode
                 if previous:
                     nextPosition = []
                     nextPosition.append(previous[0] + direction)
                     nextPosition.append(previous[1] + 1)
-                    # print("nextPosition:")
-                    # print(nextPosition)
                     nextPositionList.append(nextPosition)
                     jumpNode.append(previous)
                     validMovesLength = len(validMoves)
@@ -168,16 +194,24 @@ class Boardinfo:
                         next_endrow = max(i - 3, -1)
                     else:
                         next_endrow = min(i + 3, 8)
-                    validMoves += (self.rightSide(i + direction, next_endrow, direction, color, right + 1, jumpNode, nextPositionList))
-                    validMoves += (self.leftSide(i + direction, next_endrow, direction, color, right - 1, jumpNode, nextPositionList))
+                    
+                    validMoves += (self.rightSide(oldrow, oldcol, i + direction, next_endrow, direction, color, right + 1, isKing, jumpNode, nextPositionList))
+                    validMoves += (self.leftSide(oldrow, oldcol, i + direction, next_endrow, direction, color, right - 1, isKing, jumpNode, nextPositionList))
+                    if isKing:
+                        if direction == -1:
+                            next_endrow = min(i + 3, 8)
+                        else:
+                            next_endrow = max(i - 3, -1)
+                        validMoves += (self.rightSide(oldrow, oldcol, i + (-direction), next_endrow, -direction, color, right + 1, isKing, jumpNode, nextPositionList))
+                        
                     if len(validMoves) == validMovesLength:
-                        finalPosition = [i, right]
+                        finalPosition = []
+                        finalPosition.append([i, right])
                         new_jumpNode = jumpNode.copy()
                         new_nextPositionList = nextPositionList.copy()
                         finalPosition.append(new_jumpNode)
                         finalPosition.append(new_nextPositionList)
                         validMoves.append(finalPosition)
-                        # print("validMoves.append(finalPosition): ",validMoves)
                     jumpNode.pop(-1)
                     nextPositionList.pop(-1)
                 break
@@ -188,9 +222,7 @@ class Boardinfo:
         return validMoves
     
     def remove(self, removePieces):
-        newlist = removePieces[2:][0]
-        for piece in newlist:
-            # print(piece)
+        for piece in removePieces:
             if self.gameBoard[piece[0]][piece[1]] == 'W':
                 self.whiteKingPiece -= 1
                 self.whitePiece -= 1
@@ -205,101 +237,70 @@ class Boardinfo:
 
     def win(self):
         if self.blackPiece <= 0:
-            return 'w'
+            # print("w win")
+            return True
         elif self.whitePiece <= 0:
-            return 'b'
+            # print("b win")
+            return True
         else:
             return False
 
 class during_game:
-    def __init__(self, gameBoard, color):
-        self.board = Boardinfo(gameBoard)
+    def __init__(self, gameBoard, color, blackPiece, whitePiece, blackKingPiece, whiteKingPiece):
+        self.board = Boardinfo(gameBoard, blackPiece, whitePiece, blackKingPiece, whiteKingPiece)
         self.turn = "b"
         self.validMoves = []
         self.selected = None
         self.color = color
         self.isKing = False
-    
-    def selectedPiece(self):
-        oldrow, oldcol = input("which piece do you try to move?").split()
-        oldrow = int(oldrow)
-        oldcol = int(oldcol)
-        piece = self.board.gameBoard[oldrow][oldcol]
-        if piece.lower() == self.color:
-            if piece.isupper():
-                self.isKing = True
-            else:
-                self.isKing = False
-            self.selected = piece
-        else:
-            print("not your color")
-            self.selectedPiece()
-            return 1
-
-        if self.selected:
-            self.validMoves = self.board.getValidMoves(self.color, self.isKing, oldrow, oldcol)
-            # print("self.validMoves")
-            # print(self.validMoves)
-            newrow, newcol = input("where do you want the piece move to?").split()
-            newrow, newcol = int(newrow), int(newcol)
-            result = self.move(oldrow, oldcol, newrow, newcol)
-            if not result:
-                print("Faile to move")
-                self.selected = None
-                self.selectedPiece()
-
-    def move(self, oldrow, oldcol, newrow, newcol):
-        canbemoved = False
-        for i in self.validMoves:
-            if i[0] == newrow and i[1] == newcol:
-                removepieces = i
-                # print("i: ",i)
-                canbemoved = True
-                break
-        if self.board.gameBoard[newrow][newcol] == '.' and canbemoved:
-            self.board.move_piece(self.selected, oldrow, oldcol, newrow, newcol)
-            jump = removepieces
-            if jump:
-                self.board.remove(jump)
-            output(self.board.gameBoard)
-        else:
-            return False
-        return True
 
     def getCurrentBoard(self):
         return self.board
 
     def afterAIMove(self, gameBoard):
-        # print("afterAIMove: ")
-        # print(gameBoard)
-
-        self.board = gameBoard[0]
+        self.board = gameBoard[-1]
+        # print("whitePiece: ", self.board.whitePiece)
+        # print("blackPiece: ", self.board.blackPiece)
+        # print("whiteKingPiece: ", self.board.whiteKingPiece)
+        # print("blackKingPiece: ", self.board.blackKingPiece)
+        # score = self.board.score(self.color)
+        # print("score: ", score)
         output(self.board.gameBoard, gameBoard)
 
 def allMoves(curBoard, color, game):
     moves = []
-    newBoardPackage = []
+    validMoveperpiecelist = []
+    validJumpMoveperpiecelist = []
+    validMoves = []
+    validJumpMoves = []
+    
     for piece in curBoard.allPieces(color):
+        validMoveperpiecelist.append(piece)
+        validJumpMoveperpiecelist.append(piece)
         if curBoard.gameBoard[piece[0]][piece[1]].isupper():
             isKing = True
         else:
             isKing = False
-        validMoves = curBoard.getValidMoves(color, isKing, piece[0], piece[1])
-        print("piece: ")
-        print(piece)
-        print("allMoves: ")
-        print(validMoves)
-        for validMove in validMoves:
-            destination = validMove[:2]
-            tempBoard = copy.deepcopy(curBoard)
-            newBoard = afterTempMove(color, piece, destination,tempBoard, game, validMove)
-            newBoardPackage.append(newBoard)
-            newBoardPackage.append(piece)
-            newBoardPackage.append(validMove)
-            moves.append(newBoardPackage)
-            newBoardPackage = []
-    print("moves")
-    print(moves)
+        
+        validMoveperpiece, validJumpMoveperpiece = curBoard.getValidMoves(color, isKing, piece[0], piece[1])
+
+        if len(validMoveperpiece) != 0:
+            validMoves += validMoveperpiece
+        if len(validJumpMoveperpiece) != 0:
+            validJumpMoves += validJumpMoveperpiece
+    if validJumpMoves:
+        validMoves = validJumpMoves
+    # print("validMoves: ")
+    # print(validMoves)
+    for validMove in validMoves:
+        newBoardPackage = []
+        destination = validMove[1]
+        tempBoard = copy.deepcopy(curBoard)
+        newBoard = afterTempMove(color, validMove[0], destination,tempBoard, game, validMove[2])
+        newBoardPackage = validMove.copy()
+        newBoardPackage.append(newBoard)
+        moves.append(newBoardPackage)
+    
     return moves
 
 def afterTempMove(color, piece, destination, tempBoard, game, jump):
@@ -309,34 +310,50 @@ def afterTempMove(color, piece, destination, tempBoard, game, jump):
     return tempBoard
 
 
-def maxvalue(curBoard, curDepth, game, myColor, oppositColor):
-    
+def maxvalue(curBoard, curDepth, game, myColor, oppositColor, alpha, beta):
     if curDepth == 0 or curBoard.win() != False:
         return curBoard.score(myColor), curBoard
     nextMove = None
     maxScore = -100000
     for move in allMoves(curBoard, myColor, game):
-        score = minvalue(move[0], curDepth - 1, game, myColor, oppositColor)[0]
-
+        # print("in max")
+        # print(move[-1].gameBoard)
+        # print("")
+        score = minvalue(move[-1], curDepth - 1, game, myColor, oppositColor, alpha, beta)[0]
+        # if curDepth == 7:
+        #     scorelist.append(score)
         maxScore = max(maxScore, score)
+        # print("maxScore: ", maxScore)
         if maxScore == score:
             nextMove = move
-        print("curDepth")
-        print(curDepth)
-        print("maxScore:")
-        print(maxScore)
+        if maxScore >= beta:
+            return maxScore, nextMove
+        alpha = max(alpha, maxScore)
+
+    # if curDepth == 7:
+    #     print("scorelist: ", scorelist)
+    #     return maxScore, nextMove, alpha
     return maxScore, nextMove
 
-def minvalue(curBoard, curDepth, game, myColor, oppositColor):
+def minvalue(curBoard, curDepth, game, myColor, oppositColor, alpha, beta):
     if curDepth == 0 or curBoard.win() != False:
+        # curBoard.win()
+
         return curBoard.score(myColor), curBoard
     nextMove = None
     minScore = 100000
     for move in allMoves(curBoard, oppositColor, game):
-        score = maxvalue(move[0], curDepth - 1, game, myColor, oppositColor)[0]
+        # print(move[-1].gameBoard)
+        # print("")
+        score = maxvalue(move[-1], curDepth - 1, game, myColor, oppositColor, alpha, beta)[0]
         minScore = min(minScore, score)
+        # print("minScore: ", minScore)
         if minScore == score:
             nextMove = move
+        if minScore <= alpha:
+            return minScore, nextMove
+        beta = min(beta, minScore)
+    # print("")
     return minScore, nextMove
 
 def output(gameBoard, outputMoves):
@@ -345,38 +362,37 @@ def output(gameBoard, outputMoves):
     outputStr = ""
     prev = ""
     f = open("output.txt", "a")
-    outputMoves = outputMoves[1:]
-    # print("outputMoves: ")
-    # print(outputMoves)
     start =  chr(97 + outputMoves[0][1]) + str(8 - outputMoves[0][0])
-    # print("start: ")
-    # print(start)
     end = chr(97 + outputMoves[1][1]) + str(8 - outputMoves[1][0])
-    if len(outputMoves[1][2]) == 0:
-        outputStr = "E " + start + " " + end + "\n"
+    if len(outputMoves[2]) == 0:
+        outputStr = "E " + start + " " + end
     else:
-        for i in outputMoves[1][3]:
-            # print("i: ",i)
+        for i in outputMoves[3]:
             istr = chr(97 + i[1]) + str(8 - i[0])
             jumpTimes += 1
             if jumpTimes == 0:
                 outputStr = "J " + start + " " + istr + "\n"
             else:
-                outputStr += "J " + prev + " " + istr + "\n"
+                if i == outputMoves[3][-1]:
+                    outputStr += "J " + prev + " " + istr
+                else:
+                    outputStr += "J " + prev + " " + istr + "\n"
             prev = istr
 
-    for position in gameBoard:
-        line += 1
-        if line == 8:
-            outputStr += ''.join(position)
-        else:
-            outputStr += ''.join(position) + "\n"
+    # for position in gameBoard:
+    #     line += 1
+    #     if line == 8:
+    #         outputStr += ''.join(position)
+    #     else:
+    #         outputStr += ''.join(position) + "\n"
     f.write(outputStr)
     f.close()
 
 #read input file
+start_time = time.time()
 lineNum = 0
 currentrow = 0
+blackKingPiece, whiteKingPiece, blackPiece, whitePiece = 0, 0, 0, 0
 gameBoard = []
 inputFile = open("input.txt", "r")
 outputFile = open("output.txt", "w")
@@ -390,26 +406,66 @@ for line in inputFile:
         timeRemain = float(line)
     else:
         gameBoard.append(list(line.strip("\n")))
-print("mode is", mode)
-print("myColor is", myColor)
-print("timeRemain is", timeRemain)
-print("gameBoard is:")
-print(gameBoard)
+# print("mode is", mode)
+# print("myColor is", myColor)
+# print("timeRemain is", timeRemain)
+# print("gameBoard is:")
+# print(gameBoard)
 if myColor == "BLACK":
     myColor = 'b'
 else:
     myColor = 'w'
-
-game = during_game(gameBoard, myColor)
-if myColor == 'b':
-    maxScore, nextMove = maxvalue(game.getCurrentBoard(), 1, game, 'b', 'w')
-    print("nextMove: ")
-    print(nextMove)
-    print("maxScore: ")
-    print(maxScore)
-    game.afterAIMove(nextMove)
+for i in range(0,8):
+    for j in range(0, 8):
+        if gameBoard[i][j] == 'W':
+            whiteKingPiece += 1
+            whitePiece += 1
+        elif gameBoard[i][j] == 'w':
+            whitePiece += 1
+        elif gameBoard[i][j] == 'B':
+            blackKingPiece += 1
+            blackPiece += 1
+        elif gameBoard[i][j] == 'b':
+            blackPiece += 1
+totalPieces = blackPiece + whitePiece
+game = during_game(gameBoard, myColor, blackPiece, whitePiece, blackKingPiece, whiteKingPiece)
+# print("totalPieces: ", totalPieces)
+if mode == "SINGLE":
+    deep = 1
 else:
-    maxScore, nextMove = maxvalue(game.getCurrentBoard(), 1, game, 'w', 'b')
-    print("nextMove: ")
-    print(nextMove)
-    game.afterAIMove(nextMove)
+    if timeRemain < 5:
+        deep = 7
+    elif timeRemain <= 3:
+        deep = 6
+    elif totalPieces > 20:
+        deep = 7
+    elif totalPieces > 14:
+        deep = 8
+    elif totalPieces > 10:
+        deep = 9
+    elif totalPieces > 8:
+        deep = 9
+    elif totalPieces > 4:
+        deep = 7
+    else:
+        deep = 6
+if myColor == 'b':
+    maxScore, nextMove = maxvalue(game.getCurrentBoard(), deep, game, 'b', 'w', -10000, 10000)
+    # print("alpha: ", alpha)
+    # print("nextMove: ")
+    # print(nextMove)
+    # print("maxScore: ")
+    # print(maxScore)
+    if type(nextMove) is list:
+        game.afterAIMove(nextMove)
+else:
+    maxScore, nextMove = maxvalue(game.getCurrentBoard(), deep, game, 'w', 'b', -10000, 10000)
+    # print("nextMove: ")
+    # print(nextMove)
+    # print(nextMove[-1].score('w'))
+    # print("maxScore: ")
+    # print(maxScore)
+    
+    if type(nextMove) is list:
+        game.afterAIMove(nextMove)
+# print("--- %s seconds ---" % (time.time() - start_time))
