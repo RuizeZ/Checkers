@@ -8,32 +8,132 @@ class Boardinfo:
         self.whiteKingPiece = whiteKingPiece
         self.blackKingPiece = blackKingPiece
         self.gameBoard = gameBoard
-
     
     def score(self, color):
-        blackPiesesScore = 0
-        whitePiesesScore = 0
-        blackKingscore = 0
-        whitekKingscore = 0
+        blackKingscore = self.blackKingPiece * 80
+        whiteKingscore = self.whiteKingPiece * 80
+        nextblackKingscore = 0
+        nextwhiteKingscore = 0
+        blackPiesesScore = (self.blackPiece - self.blackKingPiece) * 30
+        whitePiesesScore = (self.whitePiece - self.whiteKingPiece) * 30
+        blackBackRow = 0
+        whiteBackRow = 0
+        blackInMiddle = 0
+        whiteInMiddle = 0
+        blackInDanger = 0
+        whiteInDanger = 0
+        blackProtected = 0
+        whiteProtected = 0
+        blackDoubleCorner = 0
+        whiteDoubleCorner = 0
+        blackAttackDoubleCorner = 0
+        whiteAttackDoubleCorner = 0
+        blackPieces = []
+        whitePieces = []
+        maxDistance = 0
         totalPieces = self.whitePiece + self.blackPiece
         for i in range(0,8):
             for j in range(0, 8):
-                if self.gameBoard[i][j] == 'b':
-                    blackPiesesScore += 5 + i
-                elif self.gameBoard[i][j] == 'B':
-                    blackKingscore += 7 + 8
-                elif self.gameBoard[i][j] == 'w':
-                    whitePiesesScore += 5 + (7 - i)
-                elif self.gameBoard[i][j] == 'W':
-                    whitekKingscore += 7 + 8
+                if self.gameBoard[i][j] == 'b' or self.gameBoard[i][j] == 'B':
+                    blackPieces.append([i, j])
+                    if self.gameBoard[i][j] == 'b':
+                        blackPiesesScore += i
+                        if i == 0:
+                            if j == 0 or j == 7:
+                                blackBackRow += 8
+                            else:
+                                blackBackRow += 10
+                        if (i == 0 and j == 1) or (i == 1 and j == 0):
+                            blackDoubleCorner += 4
+                        if (i > 4) and (j > 4):
+                            blackAttackDoubleCorner += 2
+                        if i == 6 and j != 7:
+                            if self.gameBoard[i + 1][j - 1] == '.' and self.gameBoard[i + 1][j + 1] == '.':
+                                nextblackKingscore += 15
+                        if i == 6 and j == 7:
+                            if self.gameBoard[i + 1][j - 1] == '.':
+                                nextblackKingscore += 15
+                    if (i == 3 or i == 4):
+                        if (j > 1 and j < 6 ):
+                            blackInMiddle += 4
+                        else:
+                            blackInMiddle -= 2
 
-        blackTotalScore = (blackKingscore / totalPieces)+ blackPiesesScore
-        whiteTotalScore = (whitekKingscore / totalPieces) + whitePiesesScore
+                    if i != 0 and i != 7:
+                        if (j != 0 and j != 7):
+                            if ((self.gameBoard[i + 1][j - 1] == 'w' or self.gameBoard[i + 1][j - 1] == 'W') and self.gameBoard[i - 1][j + 1] == '.')  or ((self.gameBoard[i + 1][j + 1] == 'w' or self.gameBoard[i + 1][j + 1] == 'W') and self.gameBoard[i - 1][j - 1] == '.'):
+                                blackInDanger -= 15
+                            elif (self.gameBoard[i - 1][j - 1] == 'W' and self.gameBoard[i + 1][j + 1] == '.') or (self.gameBoard[i - 1][j + 1] == 'W' and self.gameBoard[i + 1][j - 1] == '.'):
+                                blackInDanger -= 15
+
+                        if (j == 0 or j == 7):
+                            blackProtected += 15
+                        elif (self.gameBoard[i - 1][j - 1] != '.' and (not self.gameBoard[i - 1][j - 1].isupper())) and (self.gameBoard[i - 1][j + 1] != '.' and (not self.gameBoard[i - 1][j + 1].isupper())):
+                            blackProtected += 15
+                    
+
+                elif self.gameBoard[i][j] == 'w'or self.gameBoard[i][j] == 'W':
+                    whitePieces.append([i, j])
+                    if self.gameBoard[i][j] == 'w':
+                        whitePiesesScore += 7-i
+                        if i == 7:
+                            if j == 0 or j == 6:
+                                whiteBackRow += 8
+                            else:
+                                whiteBackRow += 10
+                        if (i == 7 and j == 6) or (i == 6 and j == 7):
+                            whiteDoubleCorner += 4
+                        if (i < 3) and (j < 3):
+                            whiteAttackDoubleCorner += 2
+                        if i == 1 and j != 0:
+                            if self.gameBoard[i - 1][j - 1] == '.' and self.gameBoard[i - 1][j + 1] == '.':
+                                nextwhiteKingscore += 15
+                        elif i == 1 and j == 0:
+                            if self.gameBoard[i - 1][j + 1] == '.':
+                                nextwhiteKingscore += 15
+                    if (i == 3 or i == 4):
+                        if (j > 1 and j < 6 ):
+                            whiteInMiddle += 4
+                        else:
+                            whiteInMiddle -= 2
+
+                    if i != 0 and i != 7:
+                        if (j != 0 and j != 7):
+                            if ((self.gameBoard[i - 1][j - 1] == 'b' or self.gameBoard[i - 1][j - 1] == 'B') and self.gameBoard[i + 1][j + 1] == '.') or ((self.gameBoard[i - 1][j + 1] == 'b' or self.gameBoard[i - 1][j + 1] == 'B') and self.gameBoard[i + 1][j - 1] == '.'):
+                                whiteInDanger -= 15
+                            elif (self.gameBoard[i + 1][j - 1] == 'B' and self.gameBoard[i - 1][j + 1] == '.') or (self.gameBoard[i + 1][j + 1] == 'B' and self.gameBoard[i - 1][j - 1] == '.'):
+                                whiteInDanger -= 15
+
+                        if (j == 0 or j == 7):
+                            whiteProtected += 15
+                        elif (self.gameBoard[i + 1][j - 1] != '.' and (not self.gameBoard[i + 1][j - 1].isupper())) and (self.gameBoard[i + 1][j + 1] != '.' and (not self.gameBoard[i + 1][j + 1].isupper())):
+                                whiteProtected += 15
+                    
+
+        blackTotalScore = blackPiesesScore + blackKingscore + blackBackRow + blackInMiddle + blackInDanger + blackProtected + nextblackKingscore + blackDoubleCorner + blackAttackDoubleCorner
+        whiteTotalScore = whitePiesesScore + whiteKingscore + whiteBackRow + whiteInMiddle + whiteInDanger + whiteProtected + nextwhiteKingscore + whiteDoubleCorner + whiteAttackDoubleCorner
 
         if color == 'b':
-            score = blackTotalScore - whiteTotalScore
+            if totalPieces < 9:
+                for i in blackPieces:
+                    row = i[0]
+                    column = i[1]
+                    if self.gameBoard[row][column].isupper():
+                        for j in whitePieces:
+                            distance = math.hypot(j[0] - row, j[1] - column)
+                            maxDistance = max(maxDistance, distance)
+            
+            score = (blackTotalScore - whiteTotalScore - (maxDistance * 5)) / totalPieces
         if color == 'w':
-            score = whiteTotalScore - blackTotalScore
+            if totalPieces < 9:
+                for i in whitePieces:
+                    row = i[0]
+                    column = i[1]
+                    if self.gameBoard[row][column].isupper():
+                        for j in blackPieces:
+                            distance = math.hypot(j[0] - row, j[1] - column)
+                            maxDistance = max(maxDistance, distance)
+            score = (whiteTotalScore - blackTotalScore - (maxDistance * 5)) / totalPieces
         return score
     
     def allPieces(self, color):
@@ -44,6 +144,7 @@ class Boardinfo:
                     pieces.append([i, j])
         if color == 'w':
             pieces.reverse()
+        # print("pieces: ",pieces)
         return pieces
 
     def move_piece(self, piece, oldrow, oldcol, newrow, newcol):
@@ -54,6 +155,7 @@ class Boardinfo:
         elif piece == "w" and newrow == 0 and self.gameBoard[newrow][newcol] != "W":
             self.gameBoard[newrow][newcol] = "W"
             self.whiteKingPiece += 1
+        # print(self.gameBoard)
         
     def getValidMoves(self, color, isKing, oldrow, oldcol):
         leftDiagonal = oldcol - 1
@@ -235,13 +337,17 @@ class Boardinfo:
                 self.blackPiece -= 1
             self.gameBoard[piece[0]][piece[1]] = '.'
 
-    def win(self):
-        if self.blackPiece <= 0:
-            # print("w win")
-            return True
-        elif self.whitePiece <= 0:
-            # print("b win")
-            return True
+    def win(self, color):
+        if color == 'b':
+            if self.blackPiece <= 0:
+                return -10000
+            elif self.whitePiece <= 0:
+                return 10000
+        elif color == 'w':
+            if self.blackPiece <= 0:
+                return 10000
+            elif self.whitePiece <= 0:
+                return -10000     
         else:
             return False
 
@@ -293,10 +399,13 @@ def allMoves(curBoard, color, game):
     # print("validMoves: ")
     # print(validMoves)
     for validMove in validMoves:
+        # print("validMove: ")
+        # print(validMove)
         newBoardPackage = []
         destination = validMove[1]
         tempBoard = copy.deepcopy(curBoard)
         newBoard = afterTempMove(color, validMove[0], destination,tempBoard, game, validMove[2])
+
         newBoardPackage = validMove.copy()
         newBoardPackage.append(newBoard)
         moves.append(newBoardPackage)
@@ -311,41 +420,56 @@ def afterTempMove(color, piece, destination, tempBoard, game, jump):
 
 
 def maxvalue(curBoard, curDepth, game, myColor, oppositColor, alpha, beta):
-    if curDepth == 0 or curBoard.win() != False:
+    
+    result = curBoard.win(myColor)
+    if result != None:
+        return result, curBoard
+    elif curDepth == 0:
+        # curBoard.win()
         return curBoard.score(myColor), curBoard
     nextMove = None
     maxScore = -100000
+    scorelist = []
     for move in allMoves(curBoard, myColor, game):
         # print("in max")
         # print(move[-1].gameBoard)
         # print("")
         score = minvalue(move[-1], curDepth - 1, game, myColor, oppositColor, alpha, beta)[0]
-        # if curDepth == 7:
-        #     scorelist.append(score)
+        # print(" max curDepth: ", curDepth)
+        # scorelist.append(score)
         maxScore = max(maxScore, score)
+        # print("maxScore: ", maxScore)
         # print("maxScore: ", maxScore)
         if maxScore == score:
             nextMove = move
         if maxScore >= beta:
+            # print("return max scorelist: ", scorelist)
             return maxScore, nextMove
         alpha = max(alpha, maxScore)
-
-    # if curDepth == 7:
-    #     print("scorelist: ", scorelist)
-    #     return maxScore, nextMove, alpha
+    # if curDepth == 10:
+    #     print("max scorelist: ", scorelist)
+    # output(nextMove[-1].gameBoard, 1)
+    # print("nextMove[-1].score(myColor): ", nextMove[-1].score(myColor))
     return maxScore, nextMove
 
 def minvalue(curBoard, curDepth, game, myColor, oppositColor, alpha, beta):
-    if curDepth == 0 or curBoard.win() != False:
+    
+    result = curBoard.win(myColor)
+    if result != None:
+        return result, curBoard
+    elif curDepth == 0:
         # curBoard.win()
-
         return curBoard.score(myColor), curBoard
     nextMove = None
     minScore = 100000
+    scorelist = []
+    
     for move in allMoves(curBoard, oppositColor, game):
+
         # print(move[-1].gameBoard)
         # print("")
         score = maxvalue(move[-1], curDepth - 1, game, myColor, oppositColor, alpha, beta)[0]
+        scorelist.append(score)
         minScore = min(minScore, score)
         # print("minScore: ", minScore)
         if minScore == score:
@@ -354,6 +478,13 @@ def minvalue(curBoard, curDepth, game, myColor, oppositColor, alpha, beta):
             return minScore, nextMove
         beta = min(beta, minScore)
     # print("")
+
+    #print("min scorelist: ", scorelist)    
+    # output(nextMove[-1].gameBoard, 1)
+    # print("nextMove: ", nextMove)
+    # print("nextMove[-1].score(myColor): ", nextMove[-1].score(myColor))
+    # if curDepth == 1:
+    #     print("min scorelist: ", scorelist)
     return minScore, nextMove
 
 def output(gameBoard, outputMoves):
@@ -367,18 +498,22 @@ def output(gameBoard, outputMoves):
     if len(outputMoves[2]) == 0:
         outputStr = "E " + start + " " + end
     else:
+        # print(outputMoves[3])
         for i in outputMoves[3]:
             istr = chr(97 + i[1]) + str(8 - i[0])
             jumpTimes += 1
             if jumpTimes == 0:
-                outputStr = "J " + start + " " + istr + "\n"
+                if len(outputMoves[3]) == 1:
+                    outputStr = "J " + start + " " + istr
+                else:
+                    outputStr = "J " + start + " " + istr + "\n"
             else:
                 if i == outputMoves[3][-1]:
                     outputStr += "J " + prev + " " + istr
                 else:
                     outputStr += "J " + prev + " " + istr + "\n"
             prev = istr
-
+    # outputStr += "\n"
     # for position in gameBoard:
     #     line += 1
     #     if line == 8:
@@ -405,28 +540,24 @@ for line in inputFile:
     elif lineNum == 3:
         timeRemain = float(line)
     else:
+        for i in list(line.strip("\n")):
+            if i == 'W':
+                whiteKingPiece += 1
+                whitePiece += 1
+            elif i == 'w':
+                whitePiece += 1
+            elif i == 'B':
+                blackKingPiece += 1
+                blackPiece += 1
+            elif i == 'b':
+                blackPiece += 1
         gameBoard.append(list(line.strip("\n")))
-# print("mode is", mode)
-# print("myColor is", myColor)
-# print("timeRemain is", timeRemain)
-# print("gameBoard is:")
-# print(gameBoard)
+
 if myColor == "BLACK":
     myColor = 'b'
 else:
     myColor = 'w'
-for i in range(0,8):
-    for j in range(0, 8):
-        if gameBoard[i][j] == 'W':
-            whiteKingPiece += 1
-            whitePiece += 1
-        elif gameBoard[i][j] == 'w':
-            whitePiece += 1
-        elif gameBoard[i][j] == 'B':
-            blackKingPiece += 1
-            blackPiece += 1
-        elif gameBoard[i][j] == 'b':
-            blackPiece += 1
+
 totalPieces = blackPiece + whitePiece
 game = during_game(gameBoard, myColor, blackPiece, whitePiece, blackKingPiece, whiteKingPiece)
 # print("totalPieces: ", totalPieces)
@@ -434,24 +565,26 @@ if mode == "SINGLE":
     deep = 1
 else:
     if timeRemain < 5:
-        deep = 7
-    elif timeRemain <= 3:
         deep = 6
-    elif totalPieces > 20:
-        deep = 7
-    elif totalPieces > 14:
+    elif timeRemain <= 3:
+        deep = 4
+    elif totalPieces > 21:
         deep = 8
-    elif totalPieces > 10:
+    elif totalPieces > 13:
+        deep = 6
+    elif totalPieces > 11:
         deep = 9
     elif totalPieces > 8:
         deep = 9
-    elif totalPieces > 4:
-        deep = 7
+    elif totalPieces > 6:
+        deep = 8
+    elif totalPieces > 5:
+        deep = 9
     else:
-        deep = 6
+        deep = 9
+# print("deep: ",deep)
 if myColor == 'b':
     maxScore, nextMove = maxvalue(game.getCurrentBoard(), deep, game, 'b', 'w', -10000, 10000)
-    # print("alpha: ", alpha)
     # print("nextMove: ")
     # print(nextMove)
     # print("maxScore: ")
@@ -463,7 +596,7 @@ else:
     # print("nextMove: ")
     # print(nextMove)
     # print(nextMove[-1].score('w'))
-    # print("maxScore: ")
+    # print("maxScore: ") 
     # print(maxScore)
     
     if type(nextMove) is list:
